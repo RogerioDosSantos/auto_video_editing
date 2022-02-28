@@ -1,0 +1,13 @@
+
+tags
+obj/
+bin/
+.vs/
+
+models/
+
+src/__pycache__/
+src/uploads/
+
+qa/videos/video_demo_*
+qa/output/video_demo_*

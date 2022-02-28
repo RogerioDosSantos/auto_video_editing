@@ -1,0 +1,26 @@
+# Build Linux
+
+## Build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
+WORKDIR /workspace
+
+### Compile Project
+COPY ./src /workspace/src
+RUN echo "*** Compile Project" \
+  && cd /workspace/src \
+  && dotnet restore \
+  && dotnet publish -c Release -o /workspace/stage/release \
+  && echo "*** Compile Project - DONE" 
+
+## Release
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-bionic AS dotnetcore_apis_release
+WORKDIR /workspace
+
+### Install Release 
+COPY --from=build /workspace/stage/release /workspace/bin
+ENTRYPOINT ["dotnet", "/workspace/bin/dotnetcore_apis.dll"]
+ENV ASPNETCORE_URLS=http://+:8000
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+ENV NUGET_XMLDOC_MODE=skip
+EXPOSE 8000
+
