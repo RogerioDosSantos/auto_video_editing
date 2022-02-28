@@ -4,7 +4,28 @@ import wave
 import json
 
 from vosk import Model, KaldiRecognizer, SetLogLevel
-import Word as custom_Word
+from types import SimpleNamespace
+
+import Word as CustomWord
+import Command as CustomCommand
+
+def LoadConfiguration(): 
+    configurationFile = open("./configuration.json")
+    configuration = json.load(configurationFile)
+    configurationFile.close()
+
+    data = '{"name": "John Smith", "hometown": {"name": "New York", "id": 123}}'
+    # Parse JSON into an object with attributes corresponding to dict keys.
+    x = json.loads(data, object_hook=lambda d: SimpleNamespace(**d))
+    # print(x.name, x.hometown.name, x.hometown.id)
+    print(data)
+    print(x)
+    print(configuration)
+
+
+
+    result = configuration
+    return result
 
 def EditVideo(source, destination):
     video = mp.VideoFileClip(source)
@@ -53,8 +74,8 @@ def RecogniseWords(source, language):
             # {'text': ''}
             continue
         for obj in sentence['result']:
-            w = custom_Word.Word(obj)  # create custom Word object
-            result.append(w)  # and add it to list
+            word = CustomWord.Word(obj)  # create custom Word object
+            result.append(word)  # and add it to list
     wf.close()  # close audiofile
     # output to the screen
     # for word in result:
@@ -68,20 +89,28 @@ def ConvertMp4toWav(videoPath, audioOutputPath):
     clip.audio.write_audiofile(audioOutputPath, ffmpeg_params=["-ac", "1"])
     return True
 
+def RecognizeCommands(words):
+    result = []
+    for i in range(len(words)):
+        if i < 2:
+            continue
+        # print("- words[i] = {:1} ; words[i-1] = {:1} ; words[i-2] = {:1}".format(words[i].word, words[i-1].word, words[i-2].word))
+        if (words[i].word == words[i-1].word) and (words[i].word == words[i-2].word): 
+            command = CustomCommand.Command(words[i].word, words[i-2].start, words[i].end)
+            result.append(command)
+    for command in result:
+        print(command.to_string())
+    return result
+
 def AutoEditVideo(inVideoPath, outVideoPath, language):
+    configuration = LoadConfiguration()
+    # outSoundPath = outVideoPath.replace(".mp4", ".wav")
+    # ConvertMp4toWav(inVideoPath, outSoundPath)
+    # words = RecogniseWords(outSoundPath, language)
+    # commands = RecognizeCommands(words)
     # EditVideo("../qa/videos/video_demo_01.mp4", "../qa/output/video_demo_01_edited.mp4")
-    outSoundPath = outVideoPath.replace(".mp4", ".wav")
-    print(outSoundPath)
-    print(outVideoPath)
-    ConvertMp4toWav(inVideoPath, outSoundPath)
-    words = RecogniseWords(outSoundPath, language)
-    frase = []
-    for word in words: 
-        print(word.to_string())
-    #     frase.append("{:} ({:.2f}%)".format(word.word, word.confidence * 100))
-    # print(frase)
     return True
 
 # AutoEditVideo("../qa/videos/video_demo_05.mp4", "../qa/output/video_demo_05.mp4", "pt-br")
-AutoEditVideo("../qa/videos/video_demo_05.mp4", "../qa/output/video_demo_05.mp4", "en-us")
+AutoEditVideo("../qa/videos/video_demo_07.mp4", "../qa/output/video_demo_07.mp4", "en-us")
 

@@ -10,7 +10,6 @@ class Word:
             start (float): start time of the pronouncing the word, in seconds
             word (str): recognized word
         '''
-
         self.word = dict["word"]
         self.confidence = dict["conf"]
         self.start = dict["start"]

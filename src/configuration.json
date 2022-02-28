@@ -1,0 +1,8 @@
+{
+  "repeatForCommand": 3,
+  "commandWords": {
+    "startSegment": ["start", "starch"],
+    "deleteSegment": ["delete"],
+    "endSegment": ["finish"]
+  }
+}
