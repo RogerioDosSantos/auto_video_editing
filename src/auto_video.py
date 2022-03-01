@@ -139,5 +139,5 @@ def AutoEditVideo(inVideoPath, outVideoPath, language):
 
 # AutoEditVideo("../qa/videos/video_demo_05.mp4", "../qa/output/video_demo_05.mp4", "pt-br")
 # AutoEditVideo("../qa/videos/video_demo_07.mp4", "../qa/output/video_demo_07.mp4", "en-us")
-AutoEditVideo("../qa/videos/hackathon_autovideo_editor.mp4", "../qa/output/hackathon_autovideo_editor.mp4", "en-us")
+
 
