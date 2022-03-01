@@ -5,7 +5,7 @@ class Command:
         self.end = end
 
     def to_string(self):
-        return "{:20} from {:.2f} sec to {:.2f} sec".format(
+        return "- {:20} from {:.2f} sec to {:.2f} sec".format(
             self.command, self.start, self.end)
 
 

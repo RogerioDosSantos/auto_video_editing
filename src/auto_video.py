@@ -11,26 +11,39 @@ import Command as CustomCommand
 
 def LoadConfiguration(): 
     configurationFile = open("./configuration.json")
-    configuration = json.load(configurationFile)
+    result = json.loads(configurationFile.read(), object_hook=lambda d: SimpleNamespace(**d))
     configurationFile.close()
-
-    data = '{"name": "John Smith", "hometown": {"name": "New York", "id": 123}}'
-    # Parse JSON into an object with attributes corresponding to dict keys.
-    x = json.loads(data, object_hook=lambda d: SimpleNamespace(**d))
-    # print(x.name, x.hometown.name, x.hometown.id)
-    print(data)
-    print(x)
-    print(configuration)
-
-
-
-    result = configuration
+    # print(result.commandWords.startSegment[1])
     return result
 
-def EditVideo(source, destination):
+def GetCommandsByWord(configuration): 
+    commandsByWord = {}
+    for word in configuration.commandWords.startSegment:
+        commandsByWord[word] = "startSegment"
+    for word in configuration.commandWords.deleteSegment:
+        commandsByWord[word] = "deleteSegment"
+    for word in configuration.commandWords.endSegment:
+        commandsByWord[word] = "endSegment"
+    # print(commandsByWord)
+    return commandsByWord
+
+def RecognizeCommands(words):
+    configuration = LoadConfiguration()
+    commandsByWord = GetCommandsByWord(configuration)
+    result = []
+    for i in range(len(words)):
+        if i < 2:
+            continue
+        if (words[i].word == words[i-1].word) and (words[i].word == words[i-2].word): 
+            if words[i].word in commandsByWord:
+                command = CustomCommand.Command(commandsByWord[words[i].word], words[i-2].start, words[i].end)
+                result.append(command)
+            else:
+                print("Warning: The word '{:1}' was received as a command but there is not a command configured for this word!".format(words[i].word))
+    return result
+
+def EditVideo(source, destination, segments):
     video = mp.VideoFileClip(source)
-    # delete video fragment from 00:30 to 01:00
-    segments = [(0, 10), (60, None)]
     clips = []  # list of all video fragments
     for start_seconds, end_seconds in segments:
         # crop a video clip and add it to list
@@ -42,8 +55,8 @@ def EditVideo(source, destination):
     return True
 
 def RecogniseWords(source, language):
-    model_path = "../models/vosk-model-en-us-0.22"
-    # model_path = "../models/vosk-model-small-en-us-0.15"
+    # model_path = "../models/vosk-model-en-us-0.22"
+    model_path = "../models/vosk-model-small-en-us-0.15"
     # model_path = "../models/vosk-model-en-us-0.22-lgraph"
     if language == "pt-br":
         model_path = "../models/vosk-model-small-pt-0.3"
@@ -77,9 +90,6 @@ def RecogniseWords(source, language):
             word = CustomWord.Word(obj)  # create custom Word object
             result.append(word)  # and add it to list
     wf.close()  # close audiofile
-    # output to the screen
-    # for word in result:
-    #     print(word.to_string())
     return result
 
 def ConvertMp4toWav(videoPath, audioOutputPath):
@@ -89,28 +99,45 @@ def ConvertMp4toWav(videoPath, audioOutputPath):
     clip.audio.write_audiofile(audioOutputPath, ffmpeg_params=["-ac", "1"])
     return True
 
-def RecognizeCommands(words):
-    result = []
-    for i in range(len(words)):
-        if i < 2:
+def GetSegments(commands): 
+    # segments = [(0, 10), (60, None)]
+    segments = []
+    for i in range(len(commands)):
+        if i < 1:
             continue
-        # print("- words[i] = {:1} ; words[i-1] = {:1} ; words[i-2] = {:1}".format(words[i].word, words[i-1].word, words[i-2].word))
-        if (words[i].word == words[i-1].word) and (words[i].word == words[i-2].word): 
-            command = CustomCommand.Command(words[i].word, words[i-2].start, words[i].end)
-            result.append(command)
-    for command in result:
-        print(command.to_string())
-    return result
+        if commands[i].command == "startSegment": 
+            continue
+        elif commands[i].command == "deleteSegment":
+            continue 
+        elif commands[i].command == "endSegment":
+            if commands[i-1].command == "startSegment":
+                segments.append((commands[i-1].end, commands[i].start))
+            else: 
+                print("Warning: Found 'endSegment' command without 'startSegment' command. Ignoring command 'endSegment' from {:.2f} sec to {:.2f} sec".format(commands[i].start, commands[i].end))
+        else:
+            print("Error: Command '{:1}' not implemented!".format(commands[i].command))
+    return segments
 
 def AutoEditVideo(inVideoPath, outVideoPath, language):
-    configuration = LoadConfiguration()
-    # outSoundPath = outVideoPath.replace(".mp4", ".wav")
-    # ConvertMp4toWav(inVideoPath, outSoundPath)
-    # words = RecogniseWords(outSoundPath, language)
-    # commands = RecognizeCommands(words)
-    # EditVideo("../qa/videos/video_demo_01.mp4", "../qa/output/video_demo_01_edited.mp4")
+    outSoundPath = outVideoPath.replace(".mp4", ".wav")
+    ConvertMp4toWav(inVideoPath, outSoundPath)
+    words = RecogniseWords(outSoundPath, language)
+    print("Words:")
+    for word in words:
+        print(word.to_string())
+    commands = RecognizeCommands(words)
+    print("Commands:")
+    for command in commands:
+        print(command.to_string())
+
+    segments = GetSegments(commands)
+    print("Segments:")
+    print(segments)
+
+    EditVideo(inVideoPath, outVideoPath, segments)
     return True
 
 # AutoEditVideo("../qa/videos/video_demo_05.mp4", "../qa/output/video_demo_05.mp4", "pt-br")
-AutoEditVideo("../qa/videos/video_demo_07.mp4", "../qa/output/video_demo_07.mp4", "en-us")
+# AutoEditVideo("../qa/videos/video_demo_07.mp4", "../qa/output/video_demo_07.mp4", "en-us")
+AutoEditVideo("../qa/videos/hackathon_autovideo_editor.mp4", "../qa/output/hackathon_autovideo_editor.mp4", "en-us")
 
