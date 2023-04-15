@@ -1,6 +1,15 @@
 version = 1
 
 [[analyzers]]
+name = "test-coverage"
+
+[[analyzers]]
+name = "shell"
+
+[[analyzers]]
+name = "secrets"
+
+[[analyzers]]
 name = "docker"
 
   [analyzers.meta]
@@ -11,9 +20,3 @@ name = "python"
 
   [analyzers.meta]
   runtime_version = "3.x.x"
-
-[[analyzers]]
-name = "csharp"
-
-[[transformers]]
-name = "dotnet-format"
